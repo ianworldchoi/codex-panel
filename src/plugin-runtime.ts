@@ -1,5 +1,6 @@
 import type { App } from "obsidian";
 import { VIEW_TYPE_CODEX_PANEL, VIEW_TYPE_CODEX_THREADS, VIEW_TYPE_CODEX_TURN_DIFF } from "./constants";
+import { DEFAULT_PANEL_TYPOGRAPHY } from "./domain/appearance/typography";
 import { CodexExecutionRuntime } from "./execution-runtime";
 import type {
   ChatRuntimeView,
@@ -155,6 +156,9 @@ export class CodexPanelRuntime implements ChatViewRuntimeOwner, ThreadsViewRunti
       Object.assign(this.options.settingsRef.settings, settings);
     }
     if (
+      (Object.keys(DEFAULT_PANEL_TYPOGRAPHY) as (keyof typeof DEFAULT_PANEL_TYPOGRAPHY)[]).some(
+        (key) => previousSettings[key] !== settings[key],
+      ) ||
       previousSettings.showToolbar !== settings.showToolbar ||
       previousSettings.archiveExportEnabled !== settings.archiveExportEnabled ||
       previousSettings.newConversationsEphemeral !== settings.newConversationsEphemeral

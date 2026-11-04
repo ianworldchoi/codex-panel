@@ -250,6 +250,7 @@ export class ChatPanelSession implements ChatPanelHandle {
       toolInventoryQueries: this.environment.plugin.toolInventoryQueries,
       threadGoalQueries: this.environment.plugin.threadGoalQueries,
       threadCatalog: this.environment.plugin.threadCatalog,
+      typography: this.environment.plugin.settings.typography(),
       showToolbar: this.environment.plugin.settings.showToolbar(),
       parts: this.runtime.shell.parts,
     });

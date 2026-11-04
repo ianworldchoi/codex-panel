@@ -1,6 +1,7 @@
 import type { App, Component, EventRef } from "obsidian";
 import type { AppServerContextConnection } from "../../../app-server/connection/context-connection";
 import type { AppServerExecutionContext } from "../../../app-server/connection/execution-context";
+import type { PanelTypography } from "../../../domain/appearance/typography";
 import type { SendShortcut } from "../../../domain/input/send-shortcut";
 import type { MetadataResourceDiagnostics } from "../../../domain/runtime/diagnostics";
 import type {
@@ -39,6 +40,7 @@ export interface CodexChatHost {
 }
 
 export interface ChatPanelSettingsAccess {
+  typography(): PanelTypography;
   referenceActiveNoteOnSend(): boolean;
   attachmentFolder(): string;
   archiveExportEnabled(): boolean;

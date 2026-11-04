@@ -33,6 +33,7 @@ describe("settings preferences", () => {
       extraPanelState: { threadId: "thread-1" },
     };
     const normalized: CodexPanelSettings = {
+      ...DEFAULT_SETTINGS,
       codexPath: "/usr/local/bin/codex",
       threadNamingModel: "gpt-5.4-mini",
       threadNamingEffort: "low",
@@ -52,6 +53,29 @@ describe("settings preferences", () => {
 
     expect(normalizeSettings(storedSettings)).toEqual(normalized);
     expect(settingsMatchStoredSettings(storedSettings, normalized)).toBe(false);
+  });
+
+  it("migrates note-independent typography and persists separate roles", () => {
+    const settings = normalizeSettings({
+      composerFontFamily: "  Pretendard, sans-serif  ",
+      composerFontSize: 18,
+      userFontFamily: "Georgia",
+      userFontSize: 200,
+      assistantFontFamily: 123,
+      assistantFontSize: Number.NaN,
+      chatLineHeight: 0.5,
+    });
+    expect(settings).toMatchObject({
+      composerFontFamily: "Pretendard, sans-serif",
+      composerFontSize: 18,
+      userFontFamily: "Georgia",
+      userFontSize: 28,
+      assistantFontFamily: "",
+      assistantFontSize: 15,
+      chatLineHeight: 1.2,
+    });
+    expect(normalizeSettings(JSON.parse(JSON.stringify(settings)))).toEqual(settings);
+    expect(settingsMatchStoredSettings(settings, settings)).toBe(true);
   });
 
   it("uses the default codex path when the stored path is empty", () => {

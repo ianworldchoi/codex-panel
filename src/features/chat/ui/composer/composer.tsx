@@ -1,5 +1,6 @@
 import type { Ref, ComponentChild as UiNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
+import type { PanelTypography } from "../../../../domain/appearance/typography";
 import { disposeDomListeners, listenDomEscapeKey, listenDomEvent, listenOutsideDomEvent } from "../../../../shared/ui/events.dom";
 import { Icon, IconButton } from "../../../../shared/ui/icon.dom";
 import type { OrdinaryComposerAction } from "../../domain/composer/action";
@@ -67,6 +68,7 @@ export interface ComposerCallbacks {
 }
 
 export interface ComposerShellProps {
+  typography?: Pick<PanelTypography, "composerFontFamily" | "composerFontSize" | "chatLineHeight">;
   cancelFork?: { onCancel: () => void; disabled: boolean } | undefined;
   viewId: string;
   draft: string;
@@ -88,6 +90,7 @@ export interface ComposerShellProps {
 }
 
 export function ComposerShell({
+  typography,
   cancelFork,
   viewId,
   draft,
@@ -123,7 +126,7 @@ export function ComposerShell({
   useLayoutEffect(() => {
     const composer = composerRef.current;
     syncComposerHeight(composer);
-  }, [draft]);
+  }, [draft, typography?.composerFontFamily, typography?.composerFontSize, typography?.chatLineHeight]);
   useLayoutEffect(() => {
     const container = suggestionsRef.current;
     const selected = selectedSuggestionRef.current;
@@ -480,7 +483,7 @@ function composerSendMode(
   const interruptMode = action === "interrupt";
   const canSteer = action === "steer";
   return {
-    icon: interruptMode ? "square" : canSteer ? "corner-down-right" : "send",
+    icon: interruptMode ? "square" : canSteer ? "corner-down-right" : "arrow-up",
     label: interruptMode ? "Interrupt" : canSteer ? "Steer" : "Send",
     className: interruptMode ? "is-interrupt" : canSteer ? "is-steer" : "",
     disabled: submissionDisabled || (directInputDisabled && !interruptMode) || (sendDisabled && !interruptMode) || (busy && !canInterrupt),

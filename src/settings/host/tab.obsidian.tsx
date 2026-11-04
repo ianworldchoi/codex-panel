@@ -8,8 +8,8 @@ import {
   type SettingDefinitionItem,
 } from "obsidian";
 import type { ComponentChild as UiNode } from "preact";
-
 import { DEFAULT_CODEX_PATH } from "../../constants";
+import { normalizeChatLineHeight, normalizeFontFamily, normalizeFontSize } from "../../domain/appearance/typography";
 import type { SendShortcut } from "../../domain/input/send-shortcut";
 import { listenDomEvent } from "../../shared/ui/events.dom";
 import { IconButton } from "../../shared/ui/icon.dom";
@@ -104,6 +104,44 @@ export class CodexPanelSettingTab extends PluginSettingTab {
         name: "Temporary by default",
         desc: "Starts new conversations without saving them to history.",
         control: { type: "toggle", key: "newConversationsEphemeral" },
+      },
+      {
+        type: "group",
+        heading: "Typography",
+        cls: "codex-panel-settings__section",
+        items: [
+          ...(["composer", "user", "assistant"] as const).flatMap((role) => {
+            const label = { composer: "Composer", user: "User messages", assistant: "Agent messages" }[role];
+            const familyKey = `${role}FontFamily` as const;
+            const sizeKey = `${role}FontSize` as const;
+            return [
+              this.commitTextDefinition({
+                name: `${label} font`,
+                desc: "Installed font name or CSS font stack. Leave empty for system sans, independent of your note font.",
+                value: () => this.plugin.settings[familyKey],
+                placeholder: 'System sans (e.g. "Pretendard", sans-serif)',
+                normalizeValue: normalizeFontFamily,
+                onCommit: (value) => this.setPreference(familyKey, value),
+              }),
+              this.commitTextDefinition({
+                name: `${label} size`,
+                desc: "Font size in pixels (11–28).",
+                value: () => String(this.plugin.settings[sizeKey]),
+                placeholder: "15",
+                normalizeValue: (value) => String(normalizeFontSize(Number(value.trim() || "NaN"))),
+                onCommit: (value) => this.setPreference(sizeKey, normalizeFontSize(Number(value.trim() || "NaN"))),
+              }),
+            ];
+          }),
+          this.commitTextDefinition({
+            name: "Chat line height",
+            desc: "Line spacing for messages and composer (1.2–2.2). Code keeps its monospace font.",
+            value: () => String(this.plugin.settings.chatLineHeight),
+            placeholder: "1.65",
+            normalizeValue: (value) => String(normalizeChatLineHeight(Number(value.trim() || "NaN"))),
+            onCommit: (value) => this.setPreference("chatLineHeight", normalizeChatLineHeight(Number(value.trim() || "NaN"))),
+          }),
+        ],
       },
       {
         type: "group",

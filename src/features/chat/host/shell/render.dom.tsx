@@ -1,5 +1,6 @@
 import type { ComponentChild as UiNode } from "preact";
 import { useMemo } from "preact/hooks";
+import type { PanelTypography } from "../../../../domain/appearance/typography";
 import { listenDomEvent } from "../../../../shared/ui/events.dom";
 import { unmountUiRoot } from "../../../../shared/ui/preact-root.dom";
 import { renderObsidianUiRoot } from "../../../../shared/ui/preact-root.obsidian";
@@ -59,6 +60,7 @@ interface ChatPanelShellProps {
   toolInventoryQueries: ChatToolInventoryDisplayQueries;
   threadGoalQueries: ChatThreadGoalQueries;
   threadCatalog: ThreadCatalogPaginatedActiveReader;
+  typography: PanelTypography;
   showToolbar: boolean;
   parts: ChatPanelShellParts;
 }
@@ -67,6 +69,13 @@ const shellMounts = new WeakMap<HTMLElement, () => void>();
 
 export function renderChatPanelShell(container: HTMLElement, props: ChatPanelShellProps): void {
   container.addClass("codex-panel");
+  const typography = props.typography;
+  for (const role of ["composer", "user", "assistant"] as const) {
+    const family = typography[`${role}FontFamily`];
+    container.style.setProperty(`--codex-panel-${role}-font`, family || "var(--codex-panel-system-font)");
+    container.style.setProperty(`--codex-panel-${role}-font-size`, `${String(typography[`${role}FontSize`])}px`);
+  }
+  container.style.setProperty("--codex-panel-chat-line-height", String(typography.chatLineHeight));
   if (!shellMounts.has(container)) {
     unmountUiRoot(container);
     container.replaceChildren();
@@ -91,6 +100,7 @@ function ChatPanelShell({
   threadGoalQueries,
   threadCatalog,
   showToolbar,
+  typography,
   parts,
 }: ChatPanelShellProps): UiNode {
   return (
@@ -123,6 +133,7 @@ function ChatPanelShell({
         <ChatPanelThreadStreamRegion stateStore={stateStore} dependencies={parts.threadStream} />
         <div className="codex-panel__region codex-panel__region--composer">
           <ChatPanelComposerRegion
+            typography={typography}
             stateStore={stateStore}
             appServerQueries={appServerQueries}
             presenter={parts.composer.presenter}
@@ -308,6 +319,7 @@ function ChatPanelThreadStreamRegion({
 }
 
 function ChatPanelComposerRegion({
+  typography,
   stateStore,
   appServerQueries,
   presenter,
@@ -317,6 +329,7 @@ function ChatPanelComposerRegion({
   appServerQueries: ChatSharedDisplayQueries;
   presenter: ChatPanelComposerPresenter;
   actions: ChatPanelComposerActions;
+  typography: PanelTypography;
 }): UiNode {
   const runtimeConfig = useRuntimeConfigResource(appServerQueries);
   const models = useModelsResource(appServerQueries);
@@ -331,7 +344,13 @@ function ChatPanelComposerRegion({
     [runtimeConfig, models.value, rateLimits.value],
   );
   const model = useChatSelector(stateStore, selector);
-  return useMemo(() => <ComposerShell {...presenter.renderState(model, actions)} />, [model, presenter, actions]);
+  const { composerFontFamily, composerFontSize, chatLineHeight } = typography;
+  return useMemo(
+    () => (
+      <ComposerShell {...presenter.renderState(model, actions)} typography={{ composerFontFamily, composerFontSize, chatLineHeight }} />
+    ),
+    [model, presenter, actions, composerFontFamily, composerFontSize, chatLineHeight],
+  );
 }
 
 function startStatusBarClearanceSync(container: HTMLElement): () => void {

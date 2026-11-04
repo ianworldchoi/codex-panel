@@ -19,11 +19,56 @@
 
 .codex-panel__composer-frame {
   grid-template-columns: minmax(0, 1fr);
+  max-width: var(--codex-panel-chat-max-width);
+  margin-inline: auto;
+  gap: var(--size-4-3);
+  padding: var(--size-4-4) var(--size-4-4) var(--size-4-2);
+  border: 1px solid var(--codex-panel-border-color);
+  border-radius: var(--codex-panel-composer-radius);
+  background: var(--codex-panel-surface);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--codex-panel-text-normal) 4%, transparent);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.codex-panel__composer-frame:focus-within {
+  border-color: color-mix(in srgb, var(--codex-panel-text-normal) 25%, var(--codex-panel-surface));
+  box-shadow: 0 2px 16px color-mix(in srgb, var(--codex-panel-text-normal) 6%, transparent);
 }
 
 .codex-panel__composer-input {
+  box-sizing: border-box;
   min-height: var(--codex-panel-composer-min-height);
   max-height: min(var(--codex-panel-size-composer-input-max-height), 40vh);
+  padding: 0 var(--codex-panel-control-gap);
+  font-family: var(--codex-panel-composer-font);
+  font-size: var(--codex-panel-composer-font-size);
+  line-height: var(--codex-panel-chat-line-height);
+}
+
+.codex-panel__composer-input::placeholder {
+  color: var(--text-faint);
+}
+
+.codex-panel__send.codex-panel__send {
+  width: var(--codex-panel-size-send);
+  height: var(--codex-panel-size-send);
+  padding: var(--codex-panel-section-gap);
+  border-radius: 50%;
+  background: var(--codex-panel-text-normal);
+  color: var(--codex-panel-surface);
+  transition: opacity 150ms ease;
+}
+
+.codex-panel__send.codex-panel__send:hover:not(:disabled) {
+  background: var(--codex-panel-text-normal);
+  color: var(--codex-panel-surface);
+  opacity: 0.8;
+}
+
+.codex-panel__send.codex-panel__send:disabled {
+  opacity: 0.3;
 }
 
 .codex-panel__composer-actions {
@@ -37,14 +82,6 @@
   flex: 0 0 auto;
 }
 
-.codex-panel__composer-action.is-interrupt {
-  color: var(--icon-color-focused);
-}
-
-.codex-panel__composer-action.is-steer {
-  color: var(--icon-color-active);
-}
-
 .codex-panel__composer-meta {
   position: relative;
   display: grid;
@@ -56,7 +93,7 @@
   font-size: var(--font-ui-smaller);
   line-height: var(--line-height-tight);
   user-select: none;
-  padding: 0 var(--size-4-2) var(--size-4-1);
+  padding: 0;
 }
 
 .codex-panel__composer-meta-status {
@@ -83,9 +120,9 @@
 
 .codex-panel__composer-meta-status-visual {
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-width: 0;
-  gap: var(--size-4-2);
+  gap: var(--codex-panel-control-gap);
   align-items: center;
 }
 
@@ -99,7 +136,7 @@
 }
 
 .codex-panel__composer-meta-context-dots {
-  display: inline-flex;
+  display: none;
   flex: 0 0 auto;
 }
 
@@ -117,6 +154,7 @@
 }
 
 .codex-panel__composer-meta-separator {
+  display: none;
   flex: 0 0 auto;
   color: var(--text-faint);
 }
@@ -124,12 +162,17 @@
 .codex-panel__composer-meta-field {
   display: inline-flex;
   flex: 0 0 auto;
-  gap: var(--size-4-2);
+  gap: var(--codex-panel-control-gap);
   align-items: center;
 }
 
 .codex-panel__composer-meta-field--model {
   flex: 0 0 auto;
+  margin-inline-start: auto;
+}
+
+.codex-panel__composer-meta-field--effort {
+  text-transform: capitalize;
 }
 
 .codex-panel__composer-meta-modes {
@@ -160,6 +203,8 @@
 }
 
 .codex-panel__composer-meta-value.codex-panel__composer-meta-value {
+  border-radius: var(--radius-s);
+  padding-inline: var(--codex-panel-panel-gap);
   display: inline-flex;
   min-width: 0;
   align-items: center;
@@ -270,4 +315,9 @@
 
 .codex-panel__composer-suggestion.is-selected .codex-panel__suggestion-label {
   color: var(--text-normal);
+}
+
+.codex-panel__composer-meta-value:hover:not(.is-disabled) {
+  background: var(--background-modifier-hover);
+  color: var(--codex-panel-text-normal);
 }
