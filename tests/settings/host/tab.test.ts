@@ -48,7 +48,6 @@ describe("settings tab", () => {
         "Composer",
         "Send shortcut",
         "Scroll conversation from composer line edges",
-        "Reference active file on send",
         "Attachment folder",
         "Thread archiving",
         "Save note by default",
@@ -73,7 +72,6 @@ describe("settings tab", () => {
       ["newConversationsEphemeral", true],
       ["sendShortcut", "mod-enter"],
       ["scrollThreadFromComposerEdges", true],
-      ["referenceActiveNoteOnSend", true],
       ["archiveExportEnabled", true],
     ] as const;
     for (const [key, value] of changes) {
@@ -264,7 +262,7 @@ describe("settings tab", () => {
 
     tab.display();
     const shortcut = selectForSetting(tab, "Send shortcut");
-    const toggle = inputForSetting(tab, "Reference active file on send");
+    const toggle = inputForSetting(tab, "Scroll conversation from composer line edges");
     if (!shortcut || !toggle) throw new Error("Missing settings controls");
 
     shortcut.value = "mod-enter";
@@ -274,7 +272,7 @@ describe("settings tab", () => {
     await flushPromises();
 
     expect(selectForSetting(tab, "Send shortcut")?.value).toBe("mod-enter");
-    expect(inputForSetting(tab, "Reference active file on send")?.checked).toBe(false);
+    expect(inputForSetting(tab, "Scroll conversation from composer line edges")?.checked).toBe(false);
     expect(notices).toContain("Could not apply Codex Panel settings: disk full");
   });
 

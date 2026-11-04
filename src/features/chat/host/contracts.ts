@@ -41,7 +41,6 @@ export interface CodexChatHost {
 
 export interface ChatPanelSettingsAccess {
   typography(): PanelTypography;
-  referenceActiveNoteOnSend(): boolean;
   attachmentFolder(): string;
   archiveExportEnabled(): boolean;
   scrollThreadFromComposerEdges(): boolean;

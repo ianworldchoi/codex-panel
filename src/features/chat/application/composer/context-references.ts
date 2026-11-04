@@ -37,6 +37,7 @@ export interface ComposerSelectionEmphasis {
 
 export interface ComposerContextReferenceProvider {
   contextReferences(sourcePath: string): ComposerContextReferences;
+  subscribe(listener: () => void): () => void;
   retainSelectionEmphasis(selection: SelectionContextReference): ComposerSelectionEmphasis | null;
   dispose(): void;
 }
@@ -51,4 +52,11 @@ export function activeNoteContextReferenceMarker(activeNote: ActiveNoteContextRe
 
 function formatComposerContextPosition(position: ComposerContextPosition): string {
   return `${String(position.line + 1)}:${String(position.ch + 1)}`;
+}
+
+export function selectionReferencesEqual(left: SelectionContextReference | null, right: SelectionContextReference | null): boolean {
+  if (left === right) return true;
+  if (!left || !right || left.path !== right.path || left.text !== right.text) return false;
+  if (left.range === null) return right.range === null && left.selectionId === right.selectionId;
+  return right.range !== null && formatComposerContextRange(left.range) === formatComposerContextRange(right.range);
 }

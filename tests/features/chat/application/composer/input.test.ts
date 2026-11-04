@@ -16,6 +16,109 @@ import { chatStateFixture } from "../../support/state";
 const createInput = installComposerInputFixtures();
 
 describe("ComposerInput", () => {
+  it("attaches the active note and live selection without markers and respects exclusion while typing", () => {
+    let references: ComposerContextReferences = {
+      activeNote: { name: "Alpha", path: "Alpha.md", linktext: "Alpha" },
+      selection: editorReference("selected text", 4),
+    };
+    let changed = () => {};
+    const unsubscribe = vi.fn();
+    const provider = {
+      ...contextProvider(() => references),
+      subscribe: (listener: () => void) => {
+        changed = listener;
+        return unsubscribe;
+      },
+    };
+    const { input, prepareInput, edit, stateStore, dispose } = createInput({ contextReferenceProvider: provider });
+    edit("이 부분 설명해줘");
+    const included = prepareInput(input.draft);
+    expect(included.text).toBe("이 부분 설명해줘");
+    expect(included.input).toContainEqual({ type: "fileReference", name: "<active>", path: "Alpha.md" });
+    expect(included.input).toContainEqual(
+      expect.objectContaining({
+        type: "additionalContext",
+        value: expect.stringContaining("<selection> -> Alpha.md (source range 5:1-5:14)"),
+      }),
+    );
+    expect(included.input).toContainEqual(expect.objectContaining({ value: expect.stringContaining("selected text") }));
+    input.toggleSelection();
+    edit("조금 더 자세히 설명해줘");
+    changed();
+    expect(stateStore.getState().composer.selectionExcluded).toBe(true);
+    const excluded = prepareInput(input.draft);
+    expect(excluded.input).toContainEqual({ type: "fileReference", name: "<active>", path: "Alpha.md" });
+    expect(excluded.input).not.toContainEqual(expect.objectContaining({ value: expect.stringContaining("selected text") }));
+    references = { ...references, selection: editorReference("new selection", 7) };
+    changed();
+    expect(stateStore.getState().composer.selectionExcluded).toBe(false);
+    expect(prepareInput(input.draft).input).toContainEqual(expect.objectContaining({ value: expect.stringContaining("new selection") }));
+    dispose();
+    expect(unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it("freezes automatic context for a claimed send without overwriting a newer excluded selection on failure", () => {
+    let references: ComposerContextReferences = {
+      activeNote: { name: "Alpha", path: "Alpha.md", linktext: "Alpha" },
+      selection: editorReference("first excerpt", 0),
+    };
+    const { input, prepareInput, stateStore } = createInput({ contextReferenceProvider: contextProvider(() => references) });
+    input.setDraft("Explain this");
+    const claim = input.claimSubmission();
+    references = {
+      activeNote: { name: "Beta", path: "Beta.md", linktext: "Beta" },
+      selection: { ...editorReference("second excerpt", 9), path: "Beta.md" },
+    };
+    input.refreshContext();
+    input.toggleSelection();
+    input.setDraft("Next question");
+    const captured = prepareInput(claim?.text ?? "", claim?.inputSnapshot).input;
+    expect(captured).toContainEqual(expect.objectContaining({ value: expect.stringContaining("first excerpt") }));
+    expect(captured).not.toContainEqual(expect.objectContaining({ value: expect.stringContaining("second excerpt") }));
+    claim?.settle("failed");
+    expect(input.draft).toBe("Explain this\n\nNext question");
+    expect(stateStore.getState().composer.selectionExcluded).toBe(true);
+    expect(input.captureInputSnapshot().automaticSelection).toBeNull();
+    expect(prepareInput(input.draft).input).toContainEqual({ type: "fileReference", name: "<active>", path: "Beta.md" });
+    const literal = input.claimTextSubmission("Generated instruction");
+    expect(literal?.inputSnapshot.contextReferences).toEqual({ activeNote: null, selection: null });
+    expect(literal?.inputSnapshot.automaticSelection).toBeNull();
+  });
+
+  it("keeps the excluded selection and note chip through first-thread creation", () => {
+    const activeNote = { name: "Alpha", path: "Alpha.md", linktext: "Alpha" };
+    const selection = editorReference("excluded text", 0);
+    const { input, stateStore, prepareInput } = createInput({
+      contextReferenceProvider: contextProvider(() => ({ activeNote, selection })),
+    });
+    input.toggleSelection();
+    input.setDraft("First question");
+    const claim = input.claimSubmission();
+    claim?.adoptPanelTarget("created");
+    resumeComposerThread(stateStore, "created", true);
+    claim?.settle("accepted");
+    expect(stateStore.getState().composer.context.activeNote).toEqual(activeNote);
+    expect(stateStore.getState().composer.selectionExcluded).toBe(true);
+    input.setDraft("Second question");
+    expect(prepareInput(input.draft).input).not.toContainEqual(
+      expect.objectContaining({ value: expect.stringContaining("excluded text") }),
+    );
+  });
+
+  it("deduplicates an explicit quotation and its automatic selection while preserving explicit references after exclusion", () => {
+    const selection = editorReference("same excerpt", 3);
+    const { input, prepareInput, edit, insertFirstSuggestion } = createInput({
+      contextReferenceProvider: contextProvider(() => ({ activeNote: null, selection })),
+    });
+    edit("@sel");
+    insertFirstSuggestion();
+    const prepared = prepareInput(input.draft);
+    const context = prepared.input.find((item) => item.type === "additionalContext");
+    expect(context && "value" in context ? context.value.match(/source range/g) : []).toHaveLength(1);
+    input.toggleSelection();
+    expect(prepareInput(input.draft).input).toContainEqual(expect.objectContaining({ value: expect.stringContaining("same excerpt") }));
+  });
+
   it("settles accepted and failed claims without losing newer drafts", () => {
     const { input, stateStore } = createInput();
     input.setDraft("first message");
@@ -286,6 +389,7 @@ describe("ComposerInput", () => {
     expect(input.captureInputSnapshot().selectionSnapshots).toEqual([{ marker: firstMarker, reference: first }]);
     edit(damaged);
     expect(input.captureInputSnapshot().selectionSnapshots).toEqual([]);
+    input.toggleSelection();
     expect(prepareInput(damaged).input).not.toContainEqual(
       expect.objectContaining({ type: "additionalContext", value: expect.stringContaining("source range") }),
     );
@@ -342,6 +446,7 @@ describe("ComposerInput", () => {
     );
     expect(prepared.input).not.toContainEqual(expect.objectContaining({ value: expect.stringContaining("changed selection") }));
     expect(input.captureInputSnapshot().selectionSnapshots).toEqual([]);
+    input.toggleSelection();
     expect(prepareInput('[[notes/Alpha]] "initial selection"').input).toContainEqual(
       expect.objectContaining({
         type: "additionalContext",

@@ -59,6 +59,8 @@ export interface ChatPanelComposerModel extends RuntimeSnapshot {
   readonly sideChatActive: boolean;
   readonly forkDraft: boolean;
   readonly draft: ChatState["composer"]["draft"];
+  readonly selectionContext: ChatState["composer"]["context"]["selection"];
+  readonly selectionExcluded: boolean;
   readonly attachmentSavePending: boolean;
   readonly suggestions: ChatState["composer"]["suggestions"];
   readonly selectedSuggestionIndex: ChatState["composer"]["suggestSelected"];
@@ -90,6 +92,8 @@ export function selectChatPanelComposer(state: ChatState, shared: ChatPanelCompo
     sideChatActive: sideChat !== null,
     forkDraft: state.panelThread.kind === "fork-draft",
     draft: state.composer.draft,
+    selectionContext: state.composer.context.selection,
+    selectionExcluded: state.composer.selectionExcluded,
     attachmentSavePending: state.composer.pendingAttachmentSaveIds.length > 0,
     suggestions: state.composer.suggestions,
     selectedSuggestionIndex: state.composer.suggestSelected,

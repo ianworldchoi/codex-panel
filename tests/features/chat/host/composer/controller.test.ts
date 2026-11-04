@@ -99,7 +99,7 @@ function composerControllerOptions(
   return {
     ...composerInputOptions({ stateStore }),
     viewId: "view",
-    referenceActiveNoteOnSend: () => false,
+
     sendShortcut: () => "enter",
     scrollThreadFromComposerEdges: () => false,
     threadScrollFromComposer: vi.fn(),
@@ -141,6 +141,33 @@ function composerControllerFixture(
 }
 
 describe("ChatComposerController", () => {
+  it("shows only the selection chip and excludes its text without dropping the active note reference", async () => {
+    const selection = readingReference("selection", "선택한 문장");
+    const fixture = composerControllerFixture({
+      controller: {
+        contextReferenceProvider: contextProvider(() => ({
+          activeNote: { name: "Alpha", path: "Alpha.md", linktext: "Alpha" },
+          selection,
+        })),
+      },
+    });
+    await act(async () => renderComposerController(fixture.parent, fixture.controller, fixture.stateStore));
+    expect(fixture.parent.querySelector(".codex-panel__composer-context")?.textContent).toContain("선택한 문장");
+    expect(fixture.parent.querySelector(".codex-panel__composer-context")?.textContent).not.toContain("Alpha");
+    expect(fixture.parent.querySelectorAll(".codex-panel__composer-context-chip")).toHaveLength(1);
+    const chip = fixture.parent.querySelector<HTMLButtonElement>(".codex-panel__composer-selection-chip");
+    expect(chip?.getAttribute("aria-pressed")).toBe("true");
+    await act(async () => chip?.click());
+    await act(async () => renderComposerController(fixture.parent, fixture.controller, fixture.stateStore));
+    expect(chip?.getAttribute("aria-pressed")).toBe("false");
+    const snapshot = fixture.controller.input.captureInputSnapshot();
+    const prepared = prepareComposerInput("Explain", snapshot, () => null);
+    expect(prepared.input).toContainEqual({ type: "fileReference", name: "<active>", path: "Alpha.md" });
+    expect(prepared.input).not.toContainEqual(expect.objectContaining({ value: expect.stringContaining("선택한 문장") }));
+    await act(async () => chip?.click());
+    expect(fixture.controller.input.captureInputSnapshot().automaticSelection?.text).toBe("선택한 문장");
+  });
+
   it("rejects stale input callbacks during fork return and accepts input again afterwards", () => {
     const saveFiles = vi.fn(async () => attachmentSaveResult([]));
     const { controller, stateStore, renderShell } = composerControllerFixture({ controller: { attachmentHandler: { saveFiles } } });

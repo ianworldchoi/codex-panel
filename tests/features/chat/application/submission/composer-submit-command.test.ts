@@ -212,7 +212,7 @@ describe("submitComposer", () => {
   it("prepares /plan with claim-time context after connection and restores the draft on turn failure", async () => {
     let activeNote = { name: "Alpha", path: "notes/Alpha.md", linktext: "Alpha" };
     const { host, input, ensureConnected, execute, startTurn } = createHost("/plan Summarize", {
-      input: { referenceActiveNoteOnSend: () => true, contextReferenceProvider: contextProvider(() => ({ activeNote, selection: null })) },
+      input: { contextReferenceProvider: contextProvider(() => ({ activeNote, selection: null })) },
     });
     const connection = deferred<boolean>();
     ensureConnected.mockImplementation(() => connection.promise);

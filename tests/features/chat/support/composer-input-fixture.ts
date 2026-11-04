@@ -27,7 +27,7 @@ export function composerInputOptions(overrides: Partial<ComposerInputOptions> = 
     noteCandidateProvider: noteProvider(),
     contextReferenceProvider: contextProvider(),
     sourcePath: () => "",
-    referenceActiveNoteOnSend: () => false,
+
     view: { selection: () => null, setSelection: () => {}, focus: () => {} },
     ...overrides,
   };
@@ -127,7 +127,7 @@ export function noteProvider(overrides: Partial<NoteCandidateProvider> = {}): No
 export function contextProvider(
   contextReferences: ComposerContextReferenceProvider["contextReferences"] = () => ({ activeNote: null, selection: null }),
 ): ComposerContextReferenceProvider {
-  return { contextReferences, retainSelectionEmphasis: () => null, dispose: vi.fn() };
+  return { contextReferences, subscribe: () => () => {}, retainSelectionEmphasis: () => null, dispose: vi.fn() };
 }
 
 export function readingReference(selectionId: string, text: string): SelectionContextReference {

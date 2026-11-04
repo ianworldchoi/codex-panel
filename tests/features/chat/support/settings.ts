@@ -4,7 +4,7 @@ import type { CodexPanelSettings } from "../../../../src/settings/preferences";
 export function chatPanelSettingsAccess(settings: CodexPanelSettings): ChatPanelSettingsAccess {
   return {
     typography: () => settings,
-    referenceActiveNoteOnSend: () => settings.referenceActiveNoteOnSend,
+
     attachmentFolder: () => settings.attachmentFolder,
     archiveExportEnabled: () => settings.archiveExportEnabled,
     scrollThreadFromComposerEdges: () => settings.scrollThreadFromComposerEdges,

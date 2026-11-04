@@ -1,3 +1,6 @@
+import { constants } from "node:fs";
+import { access, stat } from "node:fs/promises";
+import { isAbsolute } from "node:path";
 import { Notice, Plugin } from "obsidian";
 
 import { VIEW_TYPE_CODEX_PANEL, VIEW_TYPE_CODEX_THREADS, VIEW_TYPE_CODEX_TURN_DIFF } from "./constants";
@@ -8,9 +11,18 @@ import { CodexTurnDiffView } from "./features/turn-diff/view.obsidian";
 import { CodexPanelRuntime } from "./plugin-runtime";
 import { getVaultPath } from "./plugin-vault.obsidian";
 import { CodexPanelSettingTab } from "./settings/host/tab.obsidian";
-import { type CodexPanelSettings, DEFAULT_SETTINGS, normalizeSettings, settingsMatchStoredSettings } from "./settings/preferences";
+import {
+  type CodexPanelSettings,
+  DEFAULT_SETTINGS,
+  normalizeCodexPath,
+  normalizeSettings,
+  settingsMatchStoredSettings,
+  sharedPanelSettings,
+} from "./settings/preferences";
 import { editorSelectionEmphasisExtension } from "./shared/ui/editor-selection-emphasis.obsidian";
 import { disposeTextareaHeightMirrors } from "./shared/ui/textarea-autogrow.measure";
+
+const DEVICE_CODEX_PATH_KEY = "codex-panel:codexPath";
 
 export default class CodexPanelPlugin extends Plugin {
   override settings: CodexPanelSettings = DEFAULT_SETTINGS;
@@ -100,13 +112,26 @@ export default class CodexPanelPlugin extends Plugin {
   async loadSettings(): Promise<void> {
     const storedSettings: unknown = await this.loadData();
     this.settings = normalizeSettings(storedSettings);
+    const localPath: unknown = this.app.loadLocalStorage(DEVICE_CODEX_PATH_KEY);
+    let codexPath = normalizeCodexPath(localPath);
+    if (localPath === null && isAbsolute(this.settings.codexPath)) {
+      try {
+        await access(this.settings.codexPath, constants.X_OK);
+        if ((await stat(this.settings.codexPath)).isFile()) codexPath = this.settings.codexPath;
+      } catch {
+        // A synced executable path may belong to another device.
+      }
+    }
+    this.settings.codexPath = codexPath;
+    this.app.saveLocalStorage(DEVICE_CODEX_PATH_KEY, codexPath);
     if (!settingsMatchStoredSettings(storedSettings, this.settings)) {
       await this.saveSettings();
     }
   }
 
   async saveSettings(settings: CodexPanelSettings = this.settings): Promise<void> {
-    await this.saveData(settings);
+    await this.saveData(sharedPanelSettings(settings));
+    this.app.saveLocalStorage(DEVICE_CODEX_PATH_KEY, settings.codexPath);
   }
 }
 

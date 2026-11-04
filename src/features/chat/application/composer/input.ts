@@ -43,7 +43,6 @@ export interface ComposerInputOptions {
   attachmentHandler: ComposerAttachmentHandler;
   sourcePath: () => string;
   stateStore: ChatStateStore;
-  referenceActiveNoteOnSend: () => boolean;
   onAttachmentError: (message: string) => void;
   sharedResources: ChatRuntimeSharedResources & {
     skillsSnapshot(): readonly SkillMetadata[] | null;
@@ -71,6 +70,7 @@ export class ComposerInput {
   private submissionInput: SubmissionInput | null = null;
   private readonly unsubscribeState: () => void;
   private readonly unsubscribeSharedResources: () => void;
+  private readonly unsubscribeContext: () => void;
   private observedPanelTarget: PanelTargetLease;
   private observedDraft: string;
 
@@ -99,6 +99,10 @@ export class ComposerInput {
     this.unsubscribeSharedResources = options.sharedResources.subscribe(() => {
       if (options.view.selection()) this.updateSuggestions();
     });
+    this.unsubscribeContext = options.contextReferenceProvider.subscribe(() => {
+      this.refreshContext();
+    });
+    this.refreshContext();
   }
 
   private get state(): ChatState {
@@ -143,6 +147,7 @@ export class ComposerInput {
     this.submissionInput?.settle("accepted");
     this.unsubscribeState();
     this.unsubscribeSharedResources();
+    this.unsubscribeContext();
     this.attachmentTransfers.dispose();
     this.clearSelectionContexts();
     this.threadCommandTarget = null;
@@ -150,14 +155,29 @@ export class ComposerInput {
     this.options.contextReferenceProvider.dispose();
   }
 
+  refreshContext(): void {
+    this.dispatch({
+      type: "composer/context-set",
+      context: this.options.contextReferenceProvider.contextReferences(this.options.sourcePath()),
+    });
+  }
+
+  toggleSelection(): void {
+    if (!this.editable) return;
+    this.refreshContext();
+    this.dispatch({ type: "composer/selection-toggled" });
+  }
+
   captureInputSnapshot(): ComposerInputSnapshot {
+    this.refreshContext();
     const sourcePath = this.options.sourcePath();
     const threadCommandTarget = threadCommandTargetForDraft(this.draft, this.threadCommandTarget);
     return {
       sourcePath,
       availableSkills: this.options.sharedResources.skillsSnapshot() ?? [],
-      referenceActiveNoteOnSend: this.options.referenceActiveNoteOnSend(),
-      contextReferences: this.options.contextReferenceProvider.contextReferences(sourcePath),
+      referenceActiveNoteOnSend: true,
+      automaticSelection: this.state.composer.selectionExcluded ? null : this.state.composer.context.selection,
+      contextReferences: this.state.composer.context,
       activeNoteSnapshots: [...this.activeNoteContextSnapshots],
       selectionSnapshots: this.selectionSnapshots(),
       attachments: [...this.attachments],
@@ -186,6 +206,7 @@ export class ComposerInput {
         sourcePath: "",
         availableSkills: [],
         referenceActiveNoteOnSend: false,
+        automaticSelection: null,
         contextReferences: { activeNote: null, selection: null },
         activeNoteSnapshots: [],
         selectionSnapshots: [],
@@ -274,6 +295,7 @@ export class ComposerInput {
     this.activeNoteContextSnapshots = [];
     this.clearSelectionContexts();
     this.threadCommandTarget = null;
+    this.refreshContext();
   }
 
   updateSuggestions(): void {

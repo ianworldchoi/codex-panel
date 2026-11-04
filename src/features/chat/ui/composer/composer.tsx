@@ -53,6 +53,7 @@ interface ComposerContextMeterViewModel {
 const COMPOSER_CONTEXT_METER_CELL_IDS = ["context-0", "context-1", "context-2", "context-3"] as const;
 
 export interface ComposerCallbacks {
+  onToggleSelection: () => void;
   onInput: (value: string) => void;
   onUpdateSuggestions: () => void;
   onKeydown: (event: KeyboardEvent) => void;
@@ -68,6 +69,7 @@ export interface ComposerCallbacks {
 }
 
 export interface ComposerShellProps {
+  selectionContext: { preview: string; note: string; included: boolean } | null;
   typography?: Pick<PanelTypography, "composerFontFamily" | "composerFontSize" | "chatLineHeight">;
   cancelFork?: { onCancel: () => void; disabled: boolean } | undefined;
   viewId: string;
@@ -90,6 +92,7 @@ export interface ComposerShellProps {
 }
 
 export function ComposerShell({
+  selectionContext,
   typography,
   cancelFork,
   viewId,
@@ -152,6 +155,25 @@ export function ComposerShell({
   return (
     <div className="codex-panel__composer">
       <div className="codex-panel-ui__text-input-frame codex-panel__composer-frame">
+        {selectionContext ? (
+          <fieldset className="codex-panel__composer-context" aria-label="Selection context">
+            <button
+              type="button"
+              className={`codex-panel__composer-context-chip codex-panel__composer-selection-chip${selectionContext.included ? "" : " is-excluded"}`}
+              aria-label={`${selectionContext.included ? "Exclude" : "Include"} selection from ${selectionContext.note}`}
+              aria-pressed={selectionContext.included}
+              title={`${selectionContext.included ? "Included" : "Excluded"}: ${selectionContext.preview}`}
+              disabled={composerLocked}
+              onMouseDown={(event) => {
+                event.preventDefault();
+              }}
+              onClick={callbacks.onToggleSelection}
+            >
+              <span className="codex-panel__composer-context-label">{selectionContext.preview}</span>
+              <Icon icon={selectionContext.included ? "x" : "plus"} className="codex-panel__composer-context-icon" />
+            </button>
+          </fieldset>
+        ) : null}
         <textarea
           ref={composerRef}
           className="codex-panel-ui__text-input codex-panel__composer-input"

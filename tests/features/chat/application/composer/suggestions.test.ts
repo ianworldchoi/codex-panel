@@ -144,15 +144,63 @@ describe("composer suggestions", () => {
     });
   });
 
-  it("loads notes only for open wikilinks and preserves empty wikilink precedence", () => {
+  it("loads notes only for reference queries and preserves empty wikilink precedence", () => {
     const loadNotes = vi.fn(() => notes);
     const suggest = (text: string) =>
       activeComposerSuggestionsWithMatcher(text, loadNotes, [], [], [], null, { fuzzyMatcher: substringMatcher });
-    for (const text of ["plain text", "/pla", "@active", "#tag", "[[Alpha]]", "[[line\nbreak"]) suggest(text);
+    for (const text of ["plain text", "/pla", "name@example.com", "#tag", "[[Alpha]]", "[[line\nbreak", "@line\nbreak"]) suggest(text);
     expect(loadNotes).not.toHaveBeenCalled();
     expect(suggest("[[alp")[0]?.replacement).toBe("[[projects/Alpha]]");
     expect(loadNotes).toHaveBeenCalledOnce();
     expect(suggest("/plan [[missing")).toEqual([]);
+  });
+
+  it("searches the entire vault from @ with Korean titles, spaces, and paths, then inserts a file reference", () => {
+    const target = {
+      ...expectPresent(notes[0]),
+      basename: "생각 정리",
+      displayName: "생각 정리",
+      path: "자료/생각 정리.md",
+      linktext: "자료/생각 정리",
+      recentIndex: null,
+    };
+    const candidates = [
+      ...notes,
+      ...Array.from({ length: 12 }, (_, index) => ({ ...target, basename: `Other ${index}`, path: `Other ${index}.md` })),
+      target,
+    ];
+    for (const query of ["생각 정리", "자료/생각"]) {
+      const text = `참고해줘 @${query}`;
+      const suggestion = expectPresent(activeComposerSuggestions(text, candidates, [])[0]);
+      expect(suggestion).toMatchObject({ display: target.displayName, detail: target.path, replacement: `[[${target.linktext}]]` });
+      const inserted = applyComposerSuggestionInsertion(text, text.length, suggestion).value;
+      expect(inserted).toBe(`참고해줘 [[${target.linktext}]]`);
+      expect(userInputWithWikiLinkReferencesAndSkills(inserted, () => ({ name: target.basename, path: target.path }), [])).toContainEqual({
+        type: "fileReference",
+        name: target.basename,
+        path: target.path,
+      });
+    }
+    expect(activeComposerSuggestions("@References/paper", candidates, [])[0]?.replacement).toBe("[[References/Paper.pdf]]");
+  });
+
+  it("offers unopened notes from bare @ alongside reserved references while keeping results bounded", () => {
+    const contextReferences = {
+      activeNote: { name: "Beta Note", path: "topics/Beta Note.md", linktext: "Beta Note" },
+      selection: null,
+    };
+    const suggestions = activeComposerSuggestions("@", notes, [], [], [], null, { contextReferences });
+    expect(suggestions[0]?.display).toBe("Active · Beta Note");
+    expect(suggestionReplacements(suggestions).slice(1)).toEqual([
+      "[[projects/Alpha]]",
+      "[[thoughts/Alpha]]",
+      "[[Assets/Diagram.png]]",
+      "[[References/Paper.pdf]]",
+      "[[Bases/Projects.base]]",
+      "[[Beta Note]]",
+    ]);
+    const unopened = Array.from({ length: 12 }, (_, index) => ({ ...expectPresent(notes[2]), path: `${index}.md`, mtime: index }));
+    expect(activeComposerSuggestions("@", unopened, [])).toHaveLength(8);
   });
 
   it("ranks scores before recency, then names and paths without mutating candidates", () => {
@@ -373,6 +421,11 @@ describe("composer suggestions", () => {
         display: "Tomorrow · 2026-07-11",
         detail: "Journal/2026/07/2026-07-11.md",
         replacement: "[[Journal/2026/07/2026-07-11]]",
+      },
+      {
+        display: "Beta Note",
+        detail: "topics/Beta Note.md",
+        replacement: "[[Beta Note]]",
       },
     ]);
     expect(

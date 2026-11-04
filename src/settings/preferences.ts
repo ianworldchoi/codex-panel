@@ -14,7 +14,6 @@ export interface CodexPanelSettings extends PanelTypography {
   newConversationsEphemeral: boolean;
   sendShortcut: SendShortcut;
   scrollThreadFromComposerEdges: boolean;
-  referenceActiveNoteOnSend: boolean;
   attachmentFolder: string;
   archiveExportEnabled: boolean;
   archiveExportFolderTemplate: string;
@@ -37,7 +36,6 @@ export const DEFAULT_SETTINGS: CodexPanelSettings = {
   newConversationsEphemeral: false,
   sendShortcut: "enter",
   scrollThreadFromComposerEdges: false,
-  referenceActiveNoteOnSend: false,
   attachmentFolder: DEFAULT_ATTACHMENT_FOLDER,
   archiveExportEnabled: false,
   archiveExportFolderTemplate: DEFAULT_ARCHIVE_EXPORT_FOLDER_TEMPLATE,
@@ -45,7 +43,13 @@ export const DEFAULT_SETTINGS: CodexPanelSettings = {
   archiveExportTags: "",
 };
 
-const SETTINGS_KEYS = Object.keys(DEFAULT_SETTINGS) as (keyof CodexPanelSettings)[];
+export function sharedPanelSettings(settings: CodexPanelSettings): Omit<CodexPanelSettings, "codexPath"> {
+  const shared: Omit<CodexPanelSettings, "codexPath"> & { codexPath?: string } = { ...settings };
+  delete shared.codexPath;
+  return shared;
+}
+
+const SETTINGS_KEYS = Object.keys(sharedPanelSettings(DEFAULT_SETTINGS)) as (keyof CodexPanelSettings)[];
 
 export function normalizeSettings(storedSettings: unknown): CodexPanelSettings {
   const record = asRecord(storedSettings);
@@ -63,7 +67,6 @@ export function normalizeSettings(storedSettings: unknown): CodexPanelSettings {
       record["scrollThreadFromComposerEdges"],
       DEFAULT_SETTINGS.scrollThreadFromComposerEdges,
     ),
-    referenceActiveNoteOnSend: booleanOrDefault(record["referenceActiveNoteOnSend"], DEFAULT_SETTINGS.referenceActiveNoteOnSend),
     attachmentFolder: normalizeAttachmentFolder(record["attachmentFolder"]),
     archiveExportEnabled: booleanOrDefault(record["archiveExportEnabled"], DEFAULT_SETTINGS.archiveExportEnabled),
     archiveExportFolderTemplate: normalizeArchiveExportFolderTemplate(record["archiveExportFolderTemplate"]),

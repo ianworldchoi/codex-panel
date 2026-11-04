@@ -12,7 +12,9 @@ import {
   type ActiveNoteContextReference,
   type ComposerContextReferences,
   formatComposerContextRange,
+  type SelectionContextReference,
   type SelectionContextSnapshot,
+  selectionReferencesEqual,
 } from "./context-references";
 import type { PreparedInput } from "./prepared-input";
 import { selectionContextMatches } from "./selection-context";
@@ -39,6 +41,7 @@ const SKILL_REFERENCE_PATTERN = /(^|[\s([{])\$([^\s\])}.,;!?]{1,120})(?=$|[\s\])
 
 interface PreparedComposerInputOptions {
   referenceActiveNoteOnSend: boolean;
+  automaticSelection?: SelectionContextReference | null;
 }
 
 function parsedWikiLinks(text: string, codeRanges: readonly MarkdownCodeRange[]): ParsedWikiLink[] {
@@ -72,6 +75,10 @@ export function preparedUserInputWithWikiLinkReferencesSkillsAndContext(
   const activeMatches = matches.filter((match) => !markdownCodeRangeContainsOffset(codeRanges, match.start));
   const referenced = new Set(activeMatches.map((match) => match.snapshot.marker));
   const selections = snapshots.filter((snapshot) => referenced.has(snapshot.marker));
+  const automaticSelection = options.automaticSelection;
+  if (automaticSelection && !selections.some((snapshot) => selectionReferencesEqual(snapshot.reference, automaticSelection))) {
+    selections.push({ reference: automaticSelection, marker: "<selection>" });
+  }
   const fileReferences: VaultFileReference[] = [];
   const wikilinkReferences: ObsidianReference[] = [];
   const seenPaths = new Set<string>();
