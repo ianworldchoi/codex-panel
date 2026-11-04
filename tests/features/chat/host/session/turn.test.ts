@@ -171,7 +171,6 @@ function sessionTurnFixture(
       selection: null,
     })),
     sourcePath: () => "snapshot.md",
-    referenceActiveNoteOnSend: () => true,
   });
   composer.setDraft(draft);
   const turn = createSessionTurn(

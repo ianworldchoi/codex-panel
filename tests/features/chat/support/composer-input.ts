@@ -5,6 +5,7 @@ export function emptyComposerInputSnapshot(): ComposerInputSnapshot {
     sourcePath: "",
     availableSkills: [],
     referenceActiveNoteOnSend: false,
+    automaticSelection: null,
     contextReferences: { activeNote: null, selection: null },
     activeNoteSnapshots: [],
     selectionSnapshots: [],

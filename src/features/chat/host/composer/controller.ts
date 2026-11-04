@@ -39,7 +39,6 @@ export class ChatComposerController {
       attachmentHandler: options.attachmentHandler,
       sourcePath: options.sourcePath,
       stateStore: options.stateStore,
-      referenceActiveNoteOnSend: options.referenceActiveNoteOnSend,
       onAttachmentError: options.onAttachmentError,
       sharedResources: options.sharedResources,
       view: {
@@ -74,6 +73,13 @@ export class ChatComposerController {
           : undefined,
       viewId: this.options.viewId,
       draft: model.draft,
+      selectionContext: model.selectionContext
+        ? {
+            preview: model.selectionContext.text.replace(/\s+/g, " ").trim(),
+            note: model.selectionContext.name,
+            included: !model.selectionExcluded,
+          }
+        : null,
       busy: model.turnBusy,
       action: ordinaryComposerAction({
         canInterrupt: composerCanInterrupt(model),
@@ -173,6 +179,9 @@ export class ChatComposerController {
       this.input.transferAttachments(files);
     };
     return {
+      onToggleSelection: () => {
+        this.input.toggleSelection();
+      },
       onInput: (value) => {
         this.input.editDraft(value);
       },

@@ -8,7 +8,9 @@ Codex Panel brings Codex into Obsidian, so you can work with it alongside your n
 
 Write prompts as you would an Obsidian note, with wikilink completion for notes and headings. Links and tags in replies work as they do in your Obsidian notes.
 
-Use `@active` to mention the open note and `@selection` to include selected text. `@today`, `@tomorrow`, and `@yesterday` reference daily notes. You can also attach files and images or bring web content into a prompt with `/web`.
+Your current note is always referenced automatically. Selected text appears as a composer chip and is included automatically; click the chip to exclude or include it. A new selection is included again.
+
+Use wikilink completion or `@active` and `@selection` suggestions to add explicit references. `@today`, `@tomorrow`, and `@yesterday` reference daily notes. You can also attach files and images or bring web content into a prompt with `/web`.
 
 **Rewrite selection** proposes changes to selected text using the surrounding note as context, with a diff preview before applying them.
 
@@ -35,7 +37,7 @@ Archiving can also save a conversation as a Markdown note in your vault. Archive
 1. Use Obsidian on desktop with a local vault where Codex can work. Install and authenticate the [Codex CLI](https://developers.openai.com/codex/cli/) first; the supported versions are listed under [Compatibility](#compatibility).
 2. In Obsidian's Community plugins browser, search for **Codex Panel**, install it, and enable it. You can also visit the [Community plugin page](https://community.obsidian.md/plugins/codex-panel).
 3. Open a note, then run **Codex Panel: Open panel** from the command palette or select the ribbon icon.
-4. Try `@active Summarize this note and suggest the next three actions.`
+4. Try `Summarize this note and suggest the next three actions.`
 
 The panel uses your existing Codex skills, MCP servers, and plugins.
 

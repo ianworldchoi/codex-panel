@@ -75,6 +75,8 @@ function reduceChatSlice(state: ChatState, action: ChatSliceAction): ChatState {
     case "runtime/pending-intent-patched":
     case "runtime/pending-intent-confirmed":
       return patchObject(state, { runtime: reduceRuntimeSlice(state.runtime, action) });
+    case "composer/context-set":
+    case "composer/selection-toggled":
     case "composer/draft-set":
     case "composer/input-set":
     case "composer/suggestions-set":

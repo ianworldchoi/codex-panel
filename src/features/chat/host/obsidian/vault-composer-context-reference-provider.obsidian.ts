@@ -68,6 +68,12 @@ export class VaultComposerContextReferenceProvider implements ComposerContextRef
     return this.shared.tracker.contextReferences(sourcePath);
   }
 
+  subscribe(listener: () => void): () => void {
+    const unsubscribe = this.shared.tracker.subscribe(listener);
+    this.lifecycle.register(unsubscribe);
+    return unsubscribe;
+  }
+
   retainSelectionEmphasis(selection: ComposerContextReferences["selection"]): ComposerSelectionEmphasis | null {
     if (this.disposed || !selection) return null;
     const decoration = this.shared.tracker.retainSelectionEmphasis(selection);
@@ -119,6 +125,27 @@ interface SharedComposerContext {
 const sharedComposerContexts = new WeakMap<App, SharedComposerContext>();
 
 class VaultComposerContextTracker extends Component {
+  private readonly contextListeners = new Set<() => void>();
+  private contextNotificationQueued = false;
+  private disposed = false;
+
+  subscribe(listener: () => void): () => void {
+    this.contextListeners.add(listener);
+    return () => {
+      this.contextListeners.delete(listener);
+    };
+  }
+
+  private notifyContextChanged(): void {
+    if (this.disposed || this.contextNotificationQueued) return;
+    this.contextNotificationQueued = true;
+    queueMicrotask(() => {
+      this.contextNotificationQueued = false;
+      if (this.disposed) return;
+      for (const listener of this.contextListeners) listener();
+    });
+  }
+
   private readonly selectionViews = new WeakMap<SelectionContextReference, MarkdownView>();
   private lastMarkdownView: MarkdownView | null = null;
   private readonly selectionIds = createLocalIdSource();
@@ -151,10 +178,12 @@ class VaultComposerContextTracker extends Component {
     this.registerEvent(
       this.app.workspace.on("layout-change", () => {
         this.syncSelectionTarget();
+        this.notifyContextChanged();
       }),
     );
     this.registerEvent(
       this.app.workspace.on("window-close", (_workspaceWindow, ownerWindow) => {
+        this.notifyContextChanged();
         if (this.selectionTarget?.document.defaultView === ownerWindow) {
           this.lastMarkdownView = null;
           this.syncSelectionTarget();
@@ -175,6 +204,16 @@ class VaultComposerContextTracker extends Component {
     this.registerEvent(this.app.vault.on("delete", invalidateFileSelection));
     this.registerEvent(this.app.vault.on("rename", invalidateFileSelection));
     this.refreshLastMarkdownView();
+    if (!this.lastMarkdownView) {
+      const file = this.activeFile();
+      if (file) {
+        this.lastMarkdownView =
+          this.app.workspace
+            .getLeavesOfType("markdown")
+            .map((leaf) => leaf.view as MarkdownView)
+            .find((view) => view.file?.path === file.path && view.containerEl.isConnected) ?? null;
+      }
+    }
     this.captureReadingSelection(false);
     this.captureEditorCandidate();
   }
@@ -189,7 +228,7 @@ class VaultComposerContextTracker extends Component {
     this.syncSelectionTarget();
     this.refreshReadingEmphases();
     const view = this.validLastMarkdownView();
-    const activeFile = view?.file ?? this.activeFile();
+    const activeFile = view?.file ?? null;
     const activeNote = activeFile
       ? {
           name: displayNameForFile(activeFile),
@@ -223,6 +262,8 @@ class VaultComposerContextTracker extends Component {
   }
 
   dispose(): void {
+    this.disposed = true;
+    this.contextListeners.clear();
     this.unload();
   }
 
@@ -231,6 +272,7 @@ class VaultComposerContextTracker extends Component {
     if (view?.file) this.lastMarkdownView = view;
     this.syncSelectionTarget();
     this.syncCandidateVisibility();
+    this.notifyContextChanged();
   }
 
   private syncSelectionTarget(): void {
@@ -273,6 +315,7 @@ class VaultComposerContextTracker extends Component {
       emphases.dispose();
     });
     lifecycle.registerDomEvent(target.document, "selectionchange", () => {
+      this.notifyContextChanged();
       if (!this.readingSelection || this.activeMarkdownView() !== view) return;
       const selection = target.document.getSelection();
       if (selection?.anchorNode && root.contains(selection.anchorNode) && selection.focusNode && root.contains(selection.focusNode)) {
@@ -293,6 +336,11 @@ class VaultComposerContextTracker extends Component {
       },
       true,
     );
+    for (const event of ["pointerup", "keyup", "focusout"] as const) {
+      lifecycle.registerDomEvent(view.containerEl, event, () => {
+        this.notifyContextChanged();
+      });
+    }
     lifecycle.registerDomEvent(root, "pointerup", () => {
       this.captureReadingSelection(true);
     });
@@ -365,6 +413,7 @@ class VaultComposerContextTracker extends Component {
     this.clearSelectionCandidate();
     const range = target.document.getSelection()?.getRangeAt(0).cloneRange() ?? null;
     this.readingSelection = { text, id: this.selectionIds.next("selection"), range };
+    this.notifyContextChanged();
     this.candidateEmphasis = range ? (this.readingEmphases?.retain(range) ?? null) : null;
     this.syncCandidateVisibility();
   }
@@ -389,10 +438,12 @@ class VaultComposerContextTracker extends Component {
 
   private clearSelectionCandidate(): void {
     this.releaseCandidateEmphasis();
+    if (this.readingSelection) this.notifyContextChanged();
     this.readingSelection = null;
   }
 
   private invalidateSelectionFile(): void {
+    this.notifyContextChanged();
     this.clearSelectionCandidate();
     this.readingEmphases?.clear();
   }
@@ -416,7 +467,8 @@ class VaultComposerContextTracker extends Component {
 
   private validLastMarkdownView(): MarkdownView | null {
     const view = this.lastMarkdownView;
-    if (!view?.file) return null;
+    if (!view?.file || !view.containerEl.isConnected || !this.app.workspace.getLeavesOfType("markdown").some((leaf) => leaf.view === view))
+      return null;
     return this.app.vault.getAbstractFileByPath(view.file.path) instanceof TFile ? view : null;
   }
 }

@@ -20,7 +20,7 @@ export function prepareComposerInput(
     (target) => resolveFileReference(target, snapshot.sourcePath),
     snapshot.availableSkills,
     composerContextReferences(snapshot, text),
-    { referenceActiveNoteOnSend: snapshot.referenceActiveNoteOnSend },
+    { referenceActiveNoteOnSend: snapshot.referenceActiveNoteOnSend, automaticSelection: snapshot.automaticSelection },
   );
   return {
     text: prepared.text,

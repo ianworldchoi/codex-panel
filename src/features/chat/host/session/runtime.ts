@@ -173,7 +173,6 @@ export function createChatPanelSessionRuntime(host: ChatPanelSessionRuntimeHost)
     sourcePath: () => environment.obsidian.app.workspace.getActiveFile()?.path ?? "",
     stateStore,
     viewId: environment.obsidian.viewId,
-    referenceActiveNoteOnSend: () => environment.plugin.settings.referenceActiveNoteOnSend(),
     sendShortcut: () => environment.plugin.settings.sendShortcut(),
     scrollThreadFromComposerEdges: () => environment.plugin.settings.scrollThreadFromComposerEdges(),
     runtimeActions: {

@@ -43,7 +43,6 @@ describe("settings preferences", () => {
       newConversationsEphemeral: true,
       sendShortcut: "mod-enter",
       scrollThreadFromComposerEdges: true,
-      referenceActiveNoteOnSend: true,
       attachmentFolder: "Codex Uploads",
       archiveExportEnabled: true,
       archiveExportFolderTemplate: "Codex Archives/{{date}}",

@@ -28,6 +28,7 @@ export function composerMetaFixture(): ComposerMetaViewModel {
 export function composerPropsFixture(overrides: Partial<ComposerShellProps> = {}): ComposerShellProps {
   return {
     viewId: "view",
+    selectionContext: null,
     draft: "",
     busy: false,
     action: "send",
@@ -50,6 +51,7 @@ export function composerPropsFixture(overrides: Partial<ComposerShellProps> = {}
 
 export function composerCallbacks() {
   return {
+    onToggleSelection: vi.fn(),
     onInput: vi.fn(),
     onUpdateSuggestions: vi.fn(),
     onKeydown: vi.fn(),

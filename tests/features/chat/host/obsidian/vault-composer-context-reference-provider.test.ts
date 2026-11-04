@@ -15,6 +15,57 @@ afterEach(() => {
 });
 
 describe("Composer selection context", () => {
+  it.each(["layout-change", "window-close"])("publishes source selection changes and clears context on %s", async (event) => {
+    const fixture = editorFixture();
+    const contexts: { note: string | null; text: string | null }[] = [];
+    const stop = fixture.provider.subscribe(() => {
+      const context = fixture.provider.contextReferences("");
+      contexts.push({ note: context.activeNote?.name ?? null, text: context.selection?.text ?? null });
+    });
+    fixture.cm.contentDOM.focus();
+    fixture.cm.dispatch({ selection: { anchor: 0, head: 5 } });
+    fixture.cm.contentDOM.dispatchEvent(new KeyboardEvent("keyup", { key: "ArrowRight", bubbles: true }));
+    await Promise.resolve();
+    expect(contexts.at(-1)).toEqual({ note: "Alpha", text: "alpha" });
+    fixture.setActive(null);
+    fixture.panel.focus();
+    await Promise.resolve();
+    expect(contexts.at(-1)).toEqual({ note: "Alpha", text: "alpha" });
+    if (event === "layout-change") fixture.view.containerEl.remove();
+    fixture.emit(event, {}, document.defaultView);
+    await Promise.resolve();
+    expect(contexts.at(-1)).toEqual({ note: null, text: null });
+    stop();
+    const count = contexts.length;
+    fixture.emit("file-open");
+    await Promise.resolve();
+    expect(contexts).toHaveLength(count);
+  });
+
+  it("publishes reading selections across panel focus and retires queued notifications on disposal", async () => {
+    const fixture = readingFixture();
+    const changes = vi.fn(() => fixture.provider.contextReferences("").selection?.text);
+    fixture.provider.subscribe(changes);
+    fixture.select("first reading selection");
+    await Promise.resolve();
+    expect(changes.mock.results.at(-1)?.value).toBe("first reading selection");
+    fixture.setActive(null);
+    fixture.panel.focus();
+    document.getSelection()?.removeAllRanges();
+    document.dispatchEvent(new Event("selectionchange"));
+    await Promise.resolve();
+    expect(changes.mock.results.at(-1)?.value).toBe("first reading selection");
+    fixture.setActive(fixture.view);
+    fixture.select("second reading selection");
+    await Promise.resolve();
+    expect(changes.mock.results.at(-1)?.value).toBe("second reading selection");
+    changes.mockClear();
+    fixture.select("queued selection");
+    fixture.provider.dispose();
+    await Promise.resolve();
+    expect(changes).not.toHaveBeenCalled();
+  });
+
   it("shows the transient selection after Panel focus before completion", () => {
     const highlights = installHighlights(document);
     const fixture = readingFixture();

@@ -205,11 +205,6 @@ export class CodexPanelSettingTab extends PluginSettingTab {
             desc: "Lets Up/Ctrl+P and Down/Ctrl+N scroll the conversation from composer line edges.",
             control: { type: "toggle", key: "scrollThreadFromComposerEdges" },
           },
-          {
-            name: "Reference active file on send",
-            desc: "Adds the active file as context on each send without changing the prompt text.",
-            control: { type: "toggle", key: "referenceActiveNoteOnSend" },
-          },
           this.commitTextDefinition({
             name: "Attachment folder",
             desc: "Vault-relative folder for files pasted or dropped into composer inputs.",
@@ -294,7 +289,6 @@ export class CodexPanelSettingTab extends PluginSettingTab {
       case "showToolbar":
       case "newConversationsEphemeral":
       case "scrollThreadFromComposerEdges":
-      case "referenceActiveNoteOnSend":
       case "archiveExportEnabled":
         if (typeof value === "boolean") await this.setPreference(key, value);
         return;
