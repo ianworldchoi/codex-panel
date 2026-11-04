@@ -30,9 +30,14 @@ export async function pluginWithLeaves(
   options: { threadsLeaves?: TestLeaf[]; turnDiffLeaves?: TestLeaf[] } = {},
 ): Promise<CodexPanelPlugin> {
   const adapter = new FileSystemAdapter();
+  const localSettings = new Map<string, unknown>();
   vi.spyOn(adapter, "getBasePath").mockReturnValue("/vault");
   const plugin = new CodexPanelPluginClass(
     {
+      loadLocalStorage: (key: string) => localSettings.get(key) ?? null,
+      saveLocalStorage: (key: string, value: unknown) => {
+        localSettings.set(key, value);
+      },
       vault: { adapter },
       workspace: {
         getLeavesOfType: vi.fn((type: string) => {

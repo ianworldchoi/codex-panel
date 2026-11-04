@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { type CodexPanelSettings, DEFAULT_SETTINGS, normalizeSettings, settingsMatchStoredSettings } from "../../src/settings/preferences";
+import {
+  type CodexPanelSettings,
+  DEFAULT_SETTINGS,
+  normalizeSettings,
+  settingsMatchStoredSettings,
+  sharedPanelSettings,
+} from "../../src/settings/preferences";
 
 describe("settings preferences", () => {
   it("normalizes empty settings", () => {
@@ -74,7 +80,7 @@ describe("settings preferences", () => {
       chatLineHeight: 1.2,
     });
     expect(normalizeSettings(JSON.parse(JSON.stringify(settings)))).toEqual(settings);
-    expect(settingsMatchStoredSettings(settings, settings)).toBe(true);
+    expect(settingsMatchStoredSettings(sharedPanelSettings(settings), settings)).toBe(true);
   });
 
   it("uses the default codex path when the stored path is empty", () => {
@@ -98,7 +104,7 @@ describe("settings preferences", () => {
       archiveExportFilenameTemplate: "{{date}} {{time}} {{title}} {{shortId}}.md",
       archiveExportTags: "codex, archive",
     });
-    expect(settingsMatchStoredSettings({ ...settings }, settings)).toBe(true);
+    expect(settingsMatchStoredSettings(sharedPanelSettings(settings), settings)).toBe(true);
     expect(settingsMatchStoredSettings({ ...settings, extraPanelState: {} }, settings)).toBe(false);
     expect(settingsMatchStoredSettings({ ...settings, codexPath: "   " }, settings)).toBe(false);
   });

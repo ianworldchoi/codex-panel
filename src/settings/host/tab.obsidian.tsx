@@ -89,7 +89,7 @@ export class CodexPanelSettingTab extends PluginSettingTab {
       },
       this.commitTextDefinition({
         name: "Codex executable",
-        desc: "Command used to start `codex app-server`. Use an absolute path when Obsidian cannot find `codex`.",
+        desc: "Command used to start `codex app-server` on this device. Saved locally, outside vault sync. Use an absolute path when Obsidian cannot find `codex`.",
         value: () => this.plugin.settings.codexPath,
         placeholder: DEFAULT_CODEX_PATH,
         normalizeValue: normalizeCodexPath,

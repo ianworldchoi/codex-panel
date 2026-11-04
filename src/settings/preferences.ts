@@ -43,7 +43,13 @@ export const DEFAULT_SETTINGS: CodexPanelSettings = {
   archiveExportTags: "",
 };
 
-const SETTINGS_KEYS = Object.keys(DEFAULT_SETTINGS) as (keyof CodexPanelSettings)[];
+export function sharedPanelSettings(settings: CodexPanelSettings): Omit<CodexPanelSettings, "codexPath"> {
+  const shared: Omit<CodexPanelSettings, "codexPath"> & { codexPath?: string } = { ...settings };
+  delete shared.codexPath;
+  return shared;
+}
+
+const SETTINGS_KEYS = Object.keys(sharedPanelSettings(DEFAULT_SETTINGS)) as (keyof CodexPanelSettings)[];
 
 export function normalizeSettings(storedSettings: unknown): CodexPanelSettings {
   const record = asRecord(storedSettings);

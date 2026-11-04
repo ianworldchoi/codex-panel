@@ -37,6 +37,58 @@ describe("CodexPanelPlugin lifecycle", () => {
     expect(secondLeaf.loadIfDeferred).toHaveBeenCalledOnce();
   });
 
+  it("keeps executable paths device-local across shared preference saves and reloads", async () => {
+    const first = await pluginWithLeaves([]);
+    const second = await pluginWithLeaves([]);
+    let shared: unknown = null;
+    const loadShared = async () => shared;
+    const saveShared = async (value: unknown) => {
+      shared = value;
+    };
+    for (const plugin of [first, second]) {
+      vi.spyOn(plugin, "loadData").mockImplementation(loadShared);
+      vi.spyOn(plugin, "saveData").mockImplementation(saveShared);
+    }
+    await first.saveSettings({ ...first.settings, codexPath: "/first/mac/codex", composerFontSize: 18 });
+    await second.loadSettings();
+    expect(second.settings).toMatchObject({ codexPath: "codex", composerFontSize: 18 });
+    await second.saveSettings({ ...second.settings, codexPath: "/second/mac/codex", assistantFontSize: 20 });
+    await first.loadSettings();
+    await second.loadSettings();
+    expect(first.settings).toMatchObject({ codexPath: "/first/mac/codex", composerFontSize: 18, assistantFontSize: 20 });
+    expect(second.settings).toMatchObject({ codexPath: "/second/mac/codex", assistantFontSize: 20 });
+    expect(shared).not.toHaveProperty("codexPath");
+    first.onunload();
+    second.onunload();
+  });
+
+  it("migrates an existing executable before removing its legacy shared path", async () => {
+    const plugin = await pluginWithLeaves([]);
+    let shared: unknown = { codexPath: process.execPath, composerFontSize: 18 };
+    vi.spyOn(plugin, "loadData").mockImplementation(async () => shared);
+    vi.spyOn(plugin, "saveData").mockImplementation(async (value) => {
+      expect(plugin.app.loadLocalStorage("codex-panel:codexPath")).toBe(process.execPath);
+      shared = value;
+    });
+    await plugin.loadSettings();
+    expect(plugin.settings).toMatchObject({ codexPath: process.execPath, composerFontSize: 18 });
+    expect(shared).not.toHaveProperty("codexPath");
+    await plugin.loadSettings();
+    expect(plugin.settings.codexPath).toBe(process.execPath);
+    plugin.onunload();
+  });
+
+  it("ignores another device's missing legacy executable and preserves an explicit local default", async () => {
+    const plugin = await pluginWithLeaves([]);
+    vi.spyOn(plugin, "loadData").mockResolvedValue({ codexPath: "/missing/other/mac/codex" });
+    await plugin.loadSettings();
+    expect(plugin.settings.codexPath).toBe("codex");
+    vi.mocked(plugin.loadData).mockResolvedValue({ codexPath: process.execPath });
+    await plugin.loadSettings();
+    expect(plugin.settings.codexPath).toBe("codex");
+    plugin.onunload();
+  });
+
   it("repairs background layout changes without loading restored leaves", async () => {
     vi.useFakeTimers();
     const leaves = [leaf({ state: { threadId: "same" } })];

@@ -41,6 +41,8 @@ Archiving can also save a conversation as a Markdown note in your vault. Archive
 
 The panel uses your existing Codex skills, MCP servers, and plugins.
 
+When syncing a vault between computers, install and sign in to Codex on each computer. **Codex executable** is saved locally for each device; other panel preferences can sync with the vault. Existing executable paths migrate only when the file is executable on that device; otherwise choose its local Codex executable in settings.
+
 If Obsidian cannot find `codex`, set **Settings → Codex Panel → Codex executable** to its absolute path, such as `/opt/homebrew/bin/codex`.
 
 Use `/doctor` for CLI and connection diagnostics, `/reconnect` to reconnect to Codex, and `/help` for the current command list. Report problems or request features in [GitHub Issues](https://github.com/murashit/codex-panel/issues).

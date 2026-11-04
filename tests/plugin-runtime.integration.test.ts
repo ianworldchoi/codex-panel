@@ -327,7 +327,8 @@ describe("CodexPanelPlugin runtime integration", () => {
 
     await expect(publishCodexPath(plugin, "codex-next")).rejects.toThrow("disk full");
 
-    expect(saveData).toHaveBeenCalledWith(expect.objectContaining({ codexPath: "codex-next" }));
+    expect(saveData).toHaveBeenCalledWith(expect.not.objectContaining({ codexPath: expect.anything() }));
+    expect(plugin.app.loadLocalStorage("codex-panel:codexPath")).toBeNull();
     expect(plugin.settings).toEqual(previousSettings);
     expect(currentChatHost(plugin).appServerContext).toBe(previousContext);
 
@@ -336,6 +337,7 @@ describe("CodexPanelPlugin runtime integration", () => {
     expect(plugin.settings.codexPath).toBe("codex-next");
     expect(currentChatHost(plugin).appServerContext).toEqual({ codexPath: "codex-next", vaultPath: "/vault" });
     expect(saveData).toHaveBeenCalledTimes(2);
+    expect(plugin.app.loadLocalStorage("codex-panel:codexPath")).toBe("codex-next");
   });
 
   it("automatically connects an empty panel after correcting an executable that failed on startup", async () => {
