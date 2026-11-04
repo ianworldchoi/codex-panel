@@ -10,7 +10,7 @@ Write prompts as you would an Obsidian note, with wikilink completion for notes 
 
 Your current note is always referenced automatically. Selected text appears as a composer chip and is included automatically; click the chip to exclude or include it. A new selection is included again.
 
-Use wikilink completion or `@active` and `@selection` suggestions to add explicit references. `@today`, `@tomorrow`, and `@yesterday` reference daily notes. You can also attach files and images or bring web content into a prompt with `/web`.
+Type `@` followed by a note title or path to search all vault files, or use wikilink completion. Suggestions show up to eight matches; keep typing to narrow the results. `@active` and `@selection` add explicit context references, while `@today`, `@tomorrow`, and `@yesterday` reference daily notes. You can also attach files and images or bring web content into a prompt with `/web`.
 
 **Rewrite selection** proposes changes to selected text using the surrounding note as context, with a diff preview before applying them.
 
