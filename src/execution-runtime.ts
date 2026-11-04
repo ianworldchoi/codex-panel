@@ -295,6 +295,7 @@ export class CodexExecutionRuntime {
 
   private chatSettings(): ChatPanelSettingsAccess {
     return {
+      typography: () => this.options.settings(),
       referenceActiveNoteOnSend: () => this.options.settings().referenceActiveNoteOnSend,
       attachmentFolder: () => this.options.settings().attachmentFolder,
       archiveExportEnabled: () => this.options.settings().archiveExportEnabled,

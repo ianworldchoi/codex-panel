@@ -2,6 +2,7 @@
 
 import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
+import { DEFAULT_PANEL_TYPOGRAPHY } from "../../../../../src/domain/appearance/typography";
 import { diagnosticProbeOk } from "../../../../../src/domain/runtime/diagnostics";
 import type { SharedServerMetadataResourceFor } from "../../../../../src/domain/runtime/metadata";
 import { createChatStateStore } from "../../../../../src/features/chat/application/state/store";
@@ -97,6 +98,38 @@ describe("ChatPanelShell", () => {
       container.remove();
     }
   });
+  it("applies role typography live while retaining the composer draft and selection", async () => {
+    const store = createChatStateStore();
+    store.dispatch({ type: "composer/draft-set", draft: "한글 draft", clearSuggestions: true });
+    const container = document.body.appendChild(document.createElement("div"));
+    const props = shellProps(store);
+    props.parts.composer.presenter = { renderState: (model) => composerPropsFixture({ draft: model.draft }) };
+    try {
+      await act(async () => renderChatPanelShell(container, props));
+      const input = container.querySelector<HTMLTextAreaElement>("textarea");
+      input?.focus();
+      input?.setSelectionRange(2, 5);
+      await act(async () =>
+        renderChatPanelShell(container, {
+          ...props,
+          typography: { ...props.typography, composerFontFamily: "Pretendard", userFontSize: 17, assistantFontFamily: "Georgia" },
+        }),
+      );
+      expect(container.style.getPropertyValue("--codex-panel-composer-font")).toBe("Pretendard");
+      expect(container.style.getPropertyValue("--codex-panel-user-font-size")).toBe("17px");
+      expect(container.style.getPropertyValue("--codex-panel-assistant-font")).toBe("Georgia");
+      expect(container.querySelector("textarea")).toBe(input);
+      expect(input?.value).toBe("한글 draft");
+      expect(input?.selectionStart).toBe(2);
+      expect(input?.selectionEnd).toBe(5);
+      await act(async () => renderChatPanelShell(container, props));
+      expect(container.style.getPropertyValue("--codex-panel-composer-font")).toBe("var(--codex-panel-system-font)");
+    } finally {
+      await act(async () => unmountChatPanelShell(container));
+      container.remove();
+    }
+  });
+
   it("updates shell components from the state store", async () => {
     const store = createChatStateStore();
     const container = document.createElement("div");
@@ -506,6 +539,7 @@ function shellProps(store: ReturnType<typeof createChatStateStore>) {
   return {
     stateStore: store,
     ...chatSharedSourcesFixture(),
+    typography: { ...DEFAULT_PANEL_TYPOGRAPHY },
     showToolbar: true,
     parts: shellParts(),
   };

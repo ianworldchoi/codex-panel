@@ -1,9 +1,10 @@
 import { DEFAULT_CODEX_PATH } from "../constants";
+import { DEFAULT_PANEL_TYPOGRAPHY, normalizePanelTypography, type PanelTypography } from "../domain/appearance/typography";
 import type { SendShortcut } from "../domain/input/send-shortcut";
 import type { ReasoningEffort } from "../domain/runtime/catalog";
 import { normalizeReasoningEffort } from "../domain/runtime/catalog";
 
-export interface CodexPanelSettings {
+export interface CodexPanelSettings extends PanelTypography {
   codexPath: string;
   threadNamingModel: string | null;
   threadNamingEffort: ReasoningEffort | null;
@@ -26,6 +27,7 @@ export const DEFAULT_ARCHIVE_EXPORT_FOLDER_TEMPLATE = "Codex Archives";
 export const DEFAULT_ARCHIVE_EXPORT_FILENAME_TEMPLATE = "{{date}} {{time}} {{title}} {{shortId}}.md";
 
 export const DEFAULT_SETTINGS: CodexPanelSettings = {
+  ...DEFAULT_PANEL_TYPOGRAPHY,
   codexPath: DEFAULT_CODEX_PATH,
   threadNamingModel: null,
   threadNamingEffort: null,
@@ -48,6 +50,7 @@ const SETTINGS_KEYS = Object.keys(DEFAULT_SETTINGS) as (keyof CodexPanelSettings
 export function normalizeSettings(storedSettings: unknown): CodexPanelSettings {
   const record = asRecord(storedSettings);
   return {
+    ...normalizePanelTypography(record),
     codexPath: normalizeCodexPath(record["codexPath"]),
     threadNamingModel: modelOrDefault(record["threadNamingModel"], DEFAULT_SETTINGS.threadNamingModel),
     threadNamingEffort: reasoningEffortOrDefault(record["threadNamingEffort"], DEFAULT_SETTINGS.threadNamingEffort),

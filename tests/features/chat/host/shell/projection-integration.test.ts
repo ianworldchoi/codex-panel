@@ -563,7 +563,10 @@ describe("chat panel projection integration", () => {
     const state = chatStateFixture();
     const shared = chatComposerSharedValuesFixture({
       runtimeConfig: runtimeConfigFromAppServerFixture({ model: "gpt-5.5", model_reasoning_effort: "high" }),
-      models: [modelFixture("gpt-5.5"), modelFixture("gpt-5-mini")],
+      models: [
+        { ...modelFixture("gpt-5.5"), displayName: "GPT-5.5" },
+        { ...modelFixture("gpt-5-mini"), displayName: "GPT-5 Mini" },
+      ],
     });
     const selectedModels: string[] = [];
     const selectedEfforts: string[] = [];
@@ -584,7 +587,8 @@ describe("chat panel projection integration", () => {
     const modelChoices = choices.modelChoices ?? [];
     const effortChoices = choices.effortChoices ?? [];
 
-    expect(modelChoices).toMatchObject([{ label: "gpt-5-mini" }, { label: "gpt-5.5" }]);
+    expect(choices.model).toBe("GPT-5.5");
+    expect(modelChoices).toMatchObject([{ label: "GPT-5 Mini" }, { label: "GPT-5.5" }]);
     expect(effortChoices).toMatchObject([{ label: "high" }]);
 
     modelChoices[0]?.onClick();

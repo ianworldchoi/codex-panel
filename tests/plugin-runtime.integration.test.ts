@@ -629,6 +629,21 @@ describe("CodexPanelPlugin runtime integration", () => {
     expect(refreshThreads).not.toHaveBeenCalled();
   });
 
+  it("publishes typography to open panels without replacing the execution runtime", async () => {
+    const { plugin, refreshChat, refreshThreads } = await settingsSurfaces();
+    const host = currentChatHost(plugin);
+    const connection = host.appServerConnection;
+    await plugin.runtime.settingTabHost().publishSettings({
+      ...plugin.settings,
+      assistantFontFamily: "Pretendard",
+      composerFontSize: 19,
+    });
+    expect(refreshChat).toHaveBeenCalledOnce();
+    expect(refreshThreads).not.toHaveBeenCalled();
+    expect(currentChatHost(plugin).appServerConnection).toBe(connection);
+    expect(host.settings.typography()).toMatchObject({ assistantFontFamily: "Pretendard", composerFontSize: 19 });
+  });
+
   it("refreshes chat and Threads settings when the archive default changes", async () => {
     const { plugin, refreshChat, refreshThreads } = await settingsSurfaces();
 

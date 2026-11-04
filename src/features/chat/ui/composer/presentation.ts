@@ -1,5 +1,5 @@
 import type { ModelMetadata, ReasoningEffort } from "../../../../domain/runtime/catalog";
-import { sortedModelMetadata } from "../../../../domain/runtime/catalog";
+import { findModelMetadataByIdOrName, sortedModelMetadata } from "../../../../domain/runtime/catalog";
 import { runtimeConfigOrDefault } from "../../../../domain/runtime/settings";
 import { compactReasoningEffortLabel } from "../../domain/runtime/labels";
 import { type RuntimeControlsResolution, resolveRuntimeControls } from "../../domain/runtime/resolution";
@@ -94,7 +94,7 @@ function composerMetaViewModel(
       autoReviewActive: reviewActive,
       fastActive,
     }),
-    model: selectedModel ?? "default",
+    model: findModelMetadataByIdOrName(snapshot.availableModels, selectedModel)?.displayName || selectedModel || "default",
     effort: compactEffort,
     planActive,
     autoReviewActive: reviewActive,
@@ -114,7 +114,7 @@ function runtimeComposerChoices(input: RuntimeComposerChoicesInput): {
   const resolution = input.resolution;
   const models = sortedModelMetadata(input.models);
   const modelChoices: ComposerRuntimeChoice[] = models.slice(0, 12).map((model) => ({
-    label: model.model,
+    label: model.displayName || model.model,
     onClick: () => {
       input.requestModel(model.model);
     },
